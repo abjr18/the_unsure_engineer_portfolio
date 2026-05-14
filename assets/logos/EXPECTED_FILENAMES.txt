@@ -1,0 +1,28 @@
+Drop image files here (PNG, JPG, WebP, or SVG). Filename = stem + extension.
+There is no logo CDN: only these local files are used. If a file is missing, a small initials placeholder is shown.
+
+--- tools/ (assets/logos/tools/) ---
+uipath
+langgraph
+python
+sql
+aws
+databricks
+dbt
+langsmith
+vector-db
+rag
+grag
+docker
+airflow
+git
+
+--- skills/ (assets/logos/skills/) ---
+root-cause-analysis
+rpa
+automation
+agentic-ai
+debugging
+problem-solving
+communication
+prompt-engineering
