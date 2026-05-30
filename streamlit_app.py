@@ -5,9 +5,14 @@ or set secrets in Streamlit Community Cloud. Access via `st.secrets` only in tha
 """
 
 import html
+import random
+import runpy
+import subprocess
 from pathlib import Path
 
+import requests
 import streamlit as st
+from datetime import datetime
 
 BASE_DIR = Path(__file__).resolve().parent
 IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".webp", ".gif")
@@ -39,93 +44,40 @@ ACCENT = "#FF7A18"
 ACCENT_SOFT = "#FFB347"
 
 DEFAULT_LINKEDIN_URL = "https://www.linkedin.com/in/abhishek-padalkar-760b431b9"
-DEFAULT_GITHUB_URL = ""
+DEFAULT_GITHUB_URL = "https://github.com/abjr18"
 
-# CDN URLs for Tools
-TOOLS_ICONS: list[tuple[str, str]] = [
-    (
-        "UiPath",
-        "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/uipath/uipath-original.svg",
-    ),
-    (
-        "LangGraph",
-        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/svgs/solid/cog.svg",
-    ),  # Generic cog icon
-    (
-        "Python",
-        "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg",
-    ),
-    ("SQL", "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/sql/sql-plain.svg"),
-    (
-        "AWS",
-        "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/amazonwebservices/amazonwebservices-original-wordmark.svg",
-    ),
-    (
-        "Databricks",
-        "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/databricks/databricks-original.svg",
-    ),
-    ("dbt", "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/dbt/dbt-plain.svg"),
-    (
-        "LangSmith",
-        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/svgs/solid/wand-magic-sparkles.svg",
-    ),  # Generic magic wand
-    (
-        "Vector DB",
-        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/svgs/solid/database.svg",
-    ),  # Generic database
-    (
-        "RAG",
-        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/svgs/solid/book-open.svg",
-    ),  # Generic book
-    (
-        "GRAG",
-        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/svgs/solid/book-open.svg",
-    ),  # Assuming GRAG is similar to RAG, using same icon
-    (
-        "Docker",
-        "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg",
-    ),
-    (
-        "Airflow",
-        "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apacheairflow/apacheairflow-original.svg",
-    ),
-    ("GIT", "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg"),
+FUNNY_MESSAGES = [
+    "Processing request...",
+    "Thank you for your patience...",
+    "My developer is broke, running on CPU not GPU...",
 ]
 
-# CDN URLs for Skills
-SKILLS_ICONS: list[tuple[str, str]] = [
-    (
-        "Root Cause Analysis",
-        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/svgs/solid/magnifying-glass-chart.svg",
-    ),
-    (
-        "RPA",
-        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/svgs/solid/robot.svg",
-    ),
-    (
-        "Automation",
-        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/svgs/solid/gears.svg",
-    ),
-    (
-        "Agentic AI",
-        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/svgs/solid/brain.svg",
-    ),
-    (
-        "Debugging",
-        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/svgs/solid/bug.svg",
-    ),
-    (
-        "Problem Solving",
-        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/svgs/solid/lightbulb.svg",
-    ),
-    (
-        "Communication",
-        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/svgs/solid/comments.svg",
-    ),
-    (
-        "Prompt Engineering",
-        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/svgs/solid/pen-nib.svg",
-    ),
+
+TOOLS: list[str] = [
+    "UiPath",
+    "LangGraph",
+    "Python",
+    "SQL",
+    "AWS",
+    "Databricks",
+    "dbt",
+    "LangSmith",
+    "Vector DB",
+    "RAG",
+    "Graph RAG",
+    "Docker",
+]
+
+
+SKILLS: list[str] = [
+    "Root Cause Analysis",
+    "RPA",
+    "Automation",
+    "Agentic AI",
+    "Debugging",
+    "Problem Solving",
+    "Communication",
+    "Prompt Engineering",
 ]
 
 
@@ -158,14 +110,21 @@ def _theme_css() -> str:
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: flex-start;
-        background: #121212;
-        border: 1px solid #2a2a2a;
+        justify-content: center;
+        background: #0b1a1a;
+        border: 1px solid #0f766e;
         border-radius: 12px;
-        padding: 14px 12px;
+        padding: 10px 14px;
         min-width: 96px;
         max-width: 130px;
         box-sizing: border-box;
+        transition: all 0.25s ease;
+      }}
+      .chip:hover {{
+        background: #115e59;
+        border-color: #2dd4bf;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(20, 184, 166, 0.25);
       }}
       .chip .icon-wrap {{
         height: 40px;
@@ -215,6 +174,23 @@ def _optional_secret(*keys: str, default: str | None = None) -> str | None:
         return str(node) if node is not None else default
     except FileNotFoundError:
         return default
+
+
+def _get_last_updated_label() -> str:
+    try:
+        result = subprocess.run(
+            ["git", "log", "-1", "--format=%cd", "--date=short"],
+            cwd=BASE_DIR,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        label = result.stdout.strip()
+        if label:
+            return label
+    except Exception:
+        pass
+    return datetime.now().strftime("%Y-%m-%d")
 
 
 def _find_profile_photo() -> Path | None:
@@ -275,36 +251,24 @@ def _logo_fallback_inner(label: str) -> str:
     return f'<div class="logo-fallback" title="{tip}">{initials}</div>'
 
 
-def _img_chip_inner(cdn_url: str, label: str) -> str:
-    """Generates HTML for an image chip using a CDN URL."""
-    tip = html.escape(f"Logo for: {label}", quote=True)  # Updated tooltip text
-    return f'<img src="{cdn_url}" alt="{html.escape(label)}" title="{tip}" style="width: 36px; height: 36px; object-fit: contain;">'
-
-
 def _tools_chips_html() -> str:
     parts = ['<div class="chip-grid">']
-    for label, cdn_url in TOOLS_ICONS:  # Changed to use cdn_url directly
-        inner = _img_chip_inner(cdn_url, label)
-        parts.append(
-            f'<div class="chip"><div class="icon-wrap">{inner}</div>'
-            f"<span>{html.escape(label)}</span></div>"
-        )
+    for label in TOOLS:
+        parts.append(f'<div class="chip"><span>{html.escape(label)}</span></div>')
     parts.append("</div>")
     return "\n".join(parts)
 
 
 def _skills_chips_html() -> str:
     parts = ['<div class="chip-grid">']
-    for label, cdn_url in SKILLS_ICONS:  # Changed to use cdn_url directly
-        inner = _img_chip_inner(cdn_url, label)
-        parts.append(
-            f'<div class="chip"><div class="icon-wrap">{inner}</div>'
-            f"<span>{html.escape(label)}</span></div>"
-        )
+    for label in SKILLS:
+        parts.append(f'<div class="chip"><span>{html.escape(label)}</span></div>')
     parts.append("</div>")
     return "\n".join(parts)
 
-
+def redirect_to_create():
+    st.session_state.my_works_action = "Create post"
+    
 def page_portfolio() -> None:
     name = _optional_secret("app", "name", default=DEFAULT_NAME) or DEFAULT_NAME
     pitch = _optional_secret("app", "pitch", default=DEFAULT_PITCH) or DEFAULT_PITCH
@@ -339,8 +303,23 @@ def page_portfolio() -> None:
     with col_photo:
         st.subheader("Profile")
         profile_photo = _find_profile_photo()
+        
         if profile_photo is not None:
-            st.image(str(profile_photo), use_container_width=True)
+            # Wrap the image in a container to isolate the style
+            with st.container(key="profile_pic_container"):
+                st.image(str(profile_photo), use_container_width=True)
+                
+                # Inject CSS targeting the image inside this container
+                st.html("""
+                    <style>
+                        div[data-testid="stVScrollBlock"]Container:has(div[key="profile_pic_container"]) img {
+                            border-radius: 50% !important;
+                            aspect-ratio: 1 / 1 !important;
+                            object-fit: cover !important;
+                            border: 3px solid #0077B5; /* Optional: LinkedIn Blue Border */
+                        }
+                    </style>
+                """)
         else:
             st.info(
                 "Add a profile image to the **`assets`** or **`Asset`** folder "
@@ -366,7 +345,7 @@ def page_portfolio() -> None:
 **Aug 2021 – Sep 2025**
         """
     )
-    st.markdown("**Focus areas**")
+    st.markdown("**Current Focus areas**")
     st.markdown(
         """
 - Agentic AI
@@ -421,6 +400,71 @@ def page_portfolio() -> None:
                 unsafe_allow_html=True,
             )
 
+    st.divider()
+    st.button("Want to JUST DUMP your thoughts but got no place???", on_click=redirect_to_create)
+    st.caption(f"Last updated: {_get_last_updated_label()}")
+
+
+def page_job_assistant() -> None:
+
+    st.set_page_config(page_title="Abhishek Padalkar's - Job Agent", layout="centered")
+    st.title("💼 The JOB AGENT")
+
+    # Add this updated message below your title
+    st.info(
+    "**Phase 1 Completed!** 🎉 More features are on the way.\n\n"
+    "👉 **Current Feature:** The bot scraps job listings, saves them as an Excel file, and hands it to you automatically so you don't have to.\n\n"
+    "🚀 **Next Update:** Resume reading, resume evaluation, and AI-powered job matching based on your CV.\n\n"
+    "💬 **Got Feedback?** I would love to hear your thoughts! Connect with me on [LinkedIn](https://www.linkedin.com/in/abhishek-padalkar-760b431b9) to share your suggestions."
+    )
+    # FASTAPI_URL = "http://localhost:8000/chat"
+    FASTAPI_URL = "http://152.67.164.240:8000/chat"
+    # Initialize conversation tracking
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    # Display previous conversation history
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+            # Capture new user input
+    if user_query := st.chat_input(
+        "e.g., Can you look up Software Engineer jobs for me?"
+    ):
+        # Display user comment right away
+        st.session_state.messages.append({"role": "user", "content": user_query})
+        with st.chat_message("user"):
+            st.markdown(user_query)
+
+            # Query the FastAPI backend
+        with st.chat_message("assistant"):
+            message_to_display = random.choice(FUNNY_MESSAGES)
+            with st.spinner(message_to_display):
+                try:
+                    res = requests.post(FASTAPI_URL, json={"message": user_query})
+                    # res = requests.post(FASTAPI_URL, user_query)
+                    if res.status_code == 200:
+                        api_response = res.json()
+                        ai_text = api_response["text"]
+                        if "downloadable_link" in api_response:
+                            file_link = api_response["downloadable_link"]
+                            st.markdown(ai_text)
+                            st.markdown(file_link)
+                        else:
+                            st.markdown(ai_text)
+                        st.session_state.messages.append(
+                            {"role": "assistant", "content": api_response}
+                        )
+
+                    else:
+                        st.error(f"Backend Error: {res.text}")
+
+                except requests.exceptions.ConnectionError:
+                    st.error(
+                        "Could not connect to FastAPI server. Is it running on port 8000?"
+                    )
+
 
 def main() -> None:
     st.set_page_config(
@@ -448,18 +492,37 @@ def main() -> None:
         """,
         unsafe_allow_html=True,
     )
+    sidebar_image_path = BASE_DIR / "assets" / "the_unsure_engineer.png"
+    if sidebar_image_path.is_file():
+        st.sidebar.image(str(sidebar_image_path), width=280)
     st.sidebar.markdown(
-        f'<p style="color:{ACCENT}; font-weight:700; margin-bottom:0.5rem;">Sections</p>',
+        f'<p style="color:{ACCENT}; font-weight:700; margin-bottom:0.5rem;">My WoRkS</p>',
         unsafe_allow_html=True,
     )
-    _ = st.sidebar.selectbox(
-        "Choose a section",
-        ["My Projects", "My Hobbies"],
+    my_works_action = st.sidebar.selectbox(
+        "My WoRkS",
+        ["None", "Create post", "View posts", "Job Agent"],
+        index=0,
+        key="my_works_action",
         label_visibility="collapsed",
-        help="Reserved for future pages (no extra content on the main page yet).",
+        help="Choose the work flow you want to open from AnonyBlog or the Job Agent.",
     )
 
-    page_portfolio()
+    st.sidebar.markdown(
+        f'<p style="color:{ACCENT}; font-weight:700; margin-bottom:0.5rem; margin-top:1rem;">Home</p>',
+        unsafe_allow_html=True,
+    )
+    if st.sidebar.button("Home"):
+        my_works_action = "None"
+
+    if my_works_action == "Create post":
+        runpy.run_path(str(BASE_DIR / "AnonyBlog" / "create_post.py"), run_name="__main__")
+    elif my_works_action == "View posts":
+        runpy.run_path(str(BASE_DIR / "AnonyBlog" / "view_posts.py"), run_name="__main__")
+    elif my_works_action == "Job Agent":
+        page_job_assistant()
+    else:
+        page_portfolio()
 
 
 if __name__ == "__main__":
