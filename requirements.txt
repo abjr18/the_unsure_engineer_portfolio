@@ -6,4 +6,3 @@ uuid
 streamlit
 supabase
 python-dotenv
-subprocess
