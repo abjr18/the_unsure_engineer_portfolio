@@ -282,7 +282,7 @@ def _skills_chips_html() -> str:
     return "\n".join(parts)
 
 def redirect_to_create():
-    st.session_state.my_works_action = "Create post"
+    st.session_state.my_works_action = "AnonBlog"
     
 def page_portfolio() -> None:
     name = _optional_secret("app", "name", default=DEFAULT_NAME) or DEFAULT_NAME
@@ -550,11 +550,11 @@ def main() -> None:
     )
     my_works_action = st.sidebar.selectbox(
         "My WoRkS",
-        ["Home", "Create post", "View posts", "Job Agent"],
+        ["Home", "AnonBlog", "Job Agent"],
         index=0,
         key="my_works_action",
         label_visibility="collapsed",
-        help="Choose the work flow you want to open from AnonyBlog or the Job Agent.",
+        help="Choose the work flow you want to open from AnonBlog or the Job Agent.",
     )
 
     # More about me (simple list, first item is a placeholder link to be updated later)
@@ -574,10 +574,8 @@ def main() -> None:
         unsafe_allow_html=True,
     )
 
-    if my_works_action == "Create post":
+    if my_works_action == "AnonBlog":
         runpy.run_path(str(BASE_DIR / "AnonyBlog" / "create_post.py"), run_name="__main__")
-    elif my_works_action == "View posts":
-        runpy.run_path(str(BASE_DIR / "AnonyBlog" / "view_posts.py"), run_name="__main__")
     elif my_works_action == "Job Agent":
         page_job_assistant()
     else:

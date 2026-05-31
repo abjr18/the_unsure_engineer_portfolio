@@ -1,4 +1,6 @@
 import time
+import runpy
+from pathlib import Path
 
 import streamlit as st
 import boto3
@@ -72,6 +74,9 @@ def generate_funny_username():
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
 st.title("Abhi's Anonymous Blog Space 📝 ")
+if st.button("View posts"):
+    runpy.run_path(str(Path(__file__).resolve().parent / "view_posts.py"), run_name="__main__")
+    st.stop()
 with st.expander(label='Add image for your post?', width=250):
 
     uploaded_file = st.file_uploader("Drag file below, or click upload to choose a file from your device", type=["jpg", "jpeg", "png"], key=st.session_state.uploader_key)

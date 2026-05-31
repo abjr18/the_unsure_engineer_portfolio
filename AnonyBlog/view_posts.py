@@ -54,9 +54,23 @@ def get_presigned_url(s3_url):
     except Exception as e:
         return e
 
-st.title("Abhi's Anonymous Blog Space 📝 ")
 
-allpostData = allposts()
+def _parse_created_at(item):
+    try:
+        return datetime.fromisoformat(item.get("created_at", ""))
+    except Exception:
+        return datetime.min
+
+
+def _format_posted_at(created_at):
+    try:
+        dt = datetime.fromisoformat(created_at)
+        return dt.strftime("%A, %b %d %Y at %I:%M %p")
+    except Exception:
+        return created_at or "Unknown time"
+
+
+allpostData = sorted(allposts(), key=_parse_created_at, reverse=True)
 totalposts = len(allpostData)
 
 for i in range(totalposts):
@@ -67,6 +81,7 @@ for i in range(totalposts):
         
         with col1:
             st.subheader(postTitle)
+            st.caption(f"Posted at: {_format_posted_at(allpostData[i].get('created_at', ''))}")
         with col2:
             st.caption(f"By {allpostData[i]['username']}")
             
