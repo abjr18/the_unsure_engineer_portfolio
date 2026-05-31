@@ -194,14 +194,29 @@ def _get_last_updated_label() -> str:
 
 
 def _find_profile_photo() -> Path | None:
-    """Use `assets/profile.jpg` if present; otherwise first image in `assets/` or `Asset/`."""
-    candidates = [
-        BASE_DIR / "assets" / "profile.jpg",
-        BASE_DIR / "Asset" / "profile.jpg",
+    """Prefer `assets/profile.jpg` or `assets/profile_picture.*`, then fall back to first image.
+
+    Searches both `assets` and `Asset` directories for a set of preferred filenames
+    (profile.jpg, profile_picture.*). If none are found, returns the first image
+    file found in the folder.
+    """
+    preferred_names = [
+        "profile.jpg",
+        "profile.jpeg",
+        "profile.png",
+        "profile.webp",
+        "profile_picture.jpg",
+        "profile_picture.jpeg",
+        "profile_picture.png",
+        "profile_picture.webp",
     ]
-    for p in candidates:
-        if p.is_file():
-            return p
+
+    for folder_name in ("assets", "Asset"):
+        for name in preferred_names:
+            p = BASE_DIR / folder_name / name
+            if p.is_file():
+                return p
+
     for folder_name in ("assets", "Asset"):
         d = BASE_DIR / folder_name
         if not d.is_dir():
@@ -401,6 +416,36 @@ def page_portfolio() -> None:
             )
 
     st.divider()
+    st.subheader("Featured projects")
+    project_tabs = st.tabs([ "Job Agent"])
+
+    project_data = [
+        {
+            "title": "Job Agent",
+            "description": (
+                "Project Overview"
+                "This containerized Job Agent simplifies and accelerates the modern employment search." 
+                "Hosted on Oracle Cloud, the application leverages FastAPI to power a web-based portfolio interface for job seekers."
+                "It pulls live listings via JobSpy, processes descriptions using local Ollama models via LangChain, and generates structured Excel tracking files." 
+                "The system delivers instant, organized data including job titles, AI summaries, direct links, and posting dates to optimize application management."
+                "Tools used: Python, FastAPI, JobSpy, LangChain, Ollama, Docker, Oracle Cloud Infrastructure (OCI)."
+            ),
+            "image": BASE_DIR / "assets" / "Job Agent Arch.png",
+        },
+    ]
+
+    for tab, project in zip(project_tabs, project_data):
+        with tab:
+            st.markdown(f"### {html.escape(project['title'])}")
+            st.markdown(project["description"])
+            image_path = project["image"]
+            if image_path.is_file():
+                st.image(str(image_path), use_container_width=True)
+            else:
+                st.caption(
+                    f"Place a diagram image at `{image_path.relative_to(BASE_DIR)}` to show the project layout."
+                )
+
     st.button("Want to JUST DUMP your thoughts but got no place???", on_click=redirect_to_create)
     st.caption(f"Last updated: {_get_last_updated_label()}")
 
@@ -465,6 +510,10 @@ def page_job_assistant() -> None:
                         "Could not connect to FastAPI server. Is it running on port 8000?"
                     )
 
+def choose_random_link():
+    links = ["https://www.wattpad.com/story/410813616-the-asylum-of-embers","https://www.inkitt.com/stories/1743526?preview=true","https://www.royalroad.com/fiction/168553/the-asylum-of-embers"]
+    luckyLink = random.choice(links)
+    return luckyLink
 
 def main() -> None:
     st.set_page_config(
@@ -494,26 +543,36 @@ def main() -> None:
     )
     sidebar_image_path = BASE_DIR / "assets" / "the_unsure_engineer.png"
     if sidebar_image_path.is_file():
-        st.sidebar.image(str(sidebar_image_path), width=280)
+        st.sidebar.image(str(sidebar_image_path))
     st.sidebar.markdown(
         f'<p style="color:{ACCENT}; font-weight:700; margin-bottom:0.5rem;">My WoRkS</p>',
         unsafe_allow_html=True,
     )
     my_works_action = st.sidebar.selectbox(
         "My WoRkS",
-        ["None", "Create post", "View posts", "Job Agent"],
+        ["Home", "Create post", "View posts", "Job Agent"],
         index=0,
         key="my_works_action",
         label_visibility="collapsed",
         help="Choose the work flow you want to open from AnonyBlog or the Job Agent.",
     )
 
+    # More about me (simple list, first item is a placeholder link to be updated later)
     st.sidebar.markdown(
-        f'<p style="color:{ACCENT}; font-weight:700; margin-bottom:0.5rem; margin-top:1rem;">Home</p>',
+        f'<p style="color:{ACCENT}; font-weight:700; margin-bottom:0.25rem; margin-top:1rem;">More about me</p>',
         unsafe_allow_html=True,
     )
-    if st.sidebar.button("Home"):
-        my_works_action = "None"
+    story_url = choose_random_link()
+
+    # Pass the variable into the string using an f-string
+    st.sidebar.markdown(
+        f"- [Fictional Stories]({story_url})\n"
+        "- Badminton\n"
+        "- Swim\n"
+        "- Travel\n"
+        "- Have fun whenever possible",
+        unsafe_allow_html=True,
+    )
 
     if my_works_action == "Create post":
         runpy.run_path(str(BASE_DIR / "AnonyBlog" / "create_post.py"), run_name="__main__")
