@@ -73,10 +73,25 @@ def generate_funny_username():
 
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
+if "viewing_posts" not in st.session_state:
+    st.session_state.viewing_posts = False
+
 st.title("Abhi's Anonymous Blog Space 📝 ")
-if st.button("View posts"):
+
+# If viewing posts, show the view_posts page with a back button
+if st.session_state.viewing_posts:
+    if st.button("← Back to Create Post"):
+        st.session_state.viewing_posts = False
+        st.rerun()
+    st.divider()
     runpy.run_path(str(Path(__file__).resolve().parent / "view_posts.py"), run_name="__main__")
     st.stop()
+
+# Otherwise, show the create post interface with view posts button
+if st.button("View posts"):
+    st.session_state.viewing_posts = True
+    st.rerun()
+
 with st.expander(label='Add image for your post?', width=250):
 
     uploaded_file = st.file_uploader("Drag file below, or click upload to choose a file from your device", type=["jpg", "jpeg", "png"], key=st.session_state.uploader_key)
