@@ -376,10 +376,6 @@ def page_portfolio() -> None:
     st.markdown(_tools_chips_html(), unsafe_allow_html=True)
 
     st.divider()
-    st.subheader("Skills")
-    st.markdown(_skills_chips_html(), unsafe_allow_html=True)
-
-    st.divider()
     st.subheader("Resume & profiles")
     linkedin = (
         _optional_secret("app", "linkedin_url", default=DEFAULT_LINKEDIN_URL)
@@ -415,11 +411,6 @@ def page_portfolio() -> None:
                 unsafe_allow_html=True,
             )
 
-    st.divider()
-    st.subheader("More highlights")
-    st.caption("More portfolio highlights will be added here soon.")
-
-    st.button("Want to JUST DUMP your thoughts but got no place???", on_click=redirect_to_create)
     st.caption(f"Last updated: {_get_last_updated_label()}")
 
 
@@ -523,7 +514,7 @@ def main() -> None:
     )
     my_works_action = st.sidebar.selectbox(
         "My WoRkS",
-        ["Home", "AnonBlog"],
+        ["Home", "AnonBlog", "Projects"],
         index=0,
         key="my_works_action",
         label_visibility="collapsed",
@@ -549,6 +540,8 @@ def main() -> None:
 
     if my_works_action == "AnonBlog":
         runpy.run_path(str(BASE_DIR / "AnonyBlog" / "create_post.py"), run_name="__main__")
+    elif my_works_action == "Projects":
+        page_portfolio()
     else:
         page_portfolio()
 
