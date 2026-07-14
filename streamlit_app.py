@@ -416,35 +416,8 @@ def page_portfolio() -> None:
             )
 
     st.divider()
-    st.subheader("Featured projects")
-    project_tabs = st.tabs([ "Job Agent"])
-
-    project_data = [
-        {
-            "title": "Job Agent",
-            "description": (
-                "Project Overview"
-                "This containerized Job Agent simplifies and accelerates the modern employment search." 
-                "Hosted on Oracle Cloud, the application leverages FastAPI to power a web-based portfolio interface for job seekers."
-                "It pulls live listings via JobSpy, processes descriptions using local Ollama models via LangChain, and generates structured Excel tracking files." 
-                "The system delivers instant, organized data including job titles, AI summaries, direct links, and posting dates to optimize application management."
-                "Tools used: Python, FastAPI, JobSpy, LangChain, Ollama, Docker, Oracle Cloud Infrastructure (OCI)."
-            ),
-            "image": BASE_DIR / "assets" / "Job Agent Arch.png",
-        },
-    ]
-
-    for tab, project in zip(project_tabs, project_data):
-        with tab:
-            st.markdown(f"### {html.escape(project['title'])}")
-            st.markdown(project["description"])
-            image_path = project["image"]
-            if image_path.is_file():
-                st.image(str(image_path), use_container_width=True)
-            else:
-                st.caption(
-                    f"Place a diagram image at `{image_path.relative_to(BASE_DIR)}` to show the project layout."
-                )
+    st.subheader("More highlights")
+    st.caption("More portfolio highlights will be added here soon.")
 
     st.button("Want to JUST DUMP your thoughts but got no place???", on_click=redirect_to_create)
     st.caption(f"Last updated: {_get_last_updated_label()}")
@@ -550,11 +523,11 @@ def main() -> None:
     )
     my_works_action = st.sidebar.selectbox(
         "My WoRkS",
-        ["Home", "AnonBlog", "Job Agent"],
+        ["Home", "AnonBlog"],
         index=0,
         key="my_works_action",
         label_visibility="collapsed",
-        help="Choose the work flow you want to open from AnonBlog or the Job Agent.",
+        help="Choose the workflow you want to open from the portfolio app.",
     )
 
     # More about me (simple list, first item is a placeholder link to be updated later)
@@ -576,8 +549,6 @@ def main() -> None:
 
     if my_works_action == "AnonBlog":
         runpy.run_path(str(BASE_DIR / "AnonyBlog" / "create_post.py"), run_name="__main__")
-    elif my_works_action == "Job Agent":
-        page_job_assistant()
     else:
         page_portfolio()
 
